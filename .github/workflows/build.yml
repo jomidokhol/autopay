@@ -16,23 +16,16 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Cordova
         run: npm install -g cordova
 
-      - name: Prepare Project
-        run: |
-          npm install
-          cordova platform add android --no-telemetry
+      - name: Install Project Dependencies
+        run: npm install
 
-      - name: Install Plugins Manually
-        run: |
-          cordova plugin add cordova-plugin-sms-receiver
-          cordova plugin add cordova-plugin-device
-          cordova plugin add cordova-plugin-background-mode
-          # Directly adding from GitHub source to avoid NPM 404 error
-          cordova plugin add https://github.com/mariusreimer/cordova-plugin-ignore-battery-optimizations.git
+      - name: Prepare Android Platform
+        run: cordova prepare android --no-telemetry
 
       - name: Build APK
         run: cordova build android --debug --no-telemetry

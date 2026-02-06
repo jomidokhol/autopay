@@ -5,9 +5,21 @@
   "description": "Auto Pay SMS Service",
   "main": "index.js",
   "dependencies": {
-    "cordova-android": "^12.0.0"
+    "cordova-android": "^12.0.0",
+    "cordova-plugin-sms-receiver": "^1.1.1",
+    "cordova-plugin-background-mode": "^0.7.3",
+    "cordova-plugin-device": "^2.1.0",
+    "cordova-plugin-ignore-battery-optimizations": "^1.0.0"
   },
-  "devDependencies": {
-    "cordova-android": "^12.0.0"
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-sms-receiver": {},
+      "cordova-plugin-background-mode": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-ignore-battery-optimizations": {}
+    },
+    "platforms": [
+      "android"
+    ]
   }
 }

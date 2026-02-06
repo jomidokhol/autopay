@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.autopay.api" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+    <name>Auto Pay</name>
+    <description>SMS Collector Service</description>
+    <author email="dev@autopay.com">Developer Nur</author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <platform name="android">
+        <preference name="KeepRunning" value="true" />
+        <preference name="AndroidXEnabled" value="true" />
+        
+        <!-- গুরুত্বপূর্ণ পারমিশনসমূহ -->
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.RECEIVE_SMS" />
+            <uses-permission android:name="android.permission.READ_SMS" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+        </config-file>
+    </platform>
+</widget>

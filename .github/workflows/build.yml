@@ -16,7 +16,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Node 18 is more stable for Cordova 12
+          node-version: '18'
 
       - name: Install Cordova
         run: npm install -g cordova
@@ -31,7 +31,7 @@ jobs:
           cordova plugin add cordova-plugin-sms-receiver
           cordova plugin add cordova-plugin-device
           cordova plugin add cordova-plugin-background-mode
-          cordova plugin add https://github.com/petermetz/cordova-plugin-battery-optimizations.git --save
+          cordova plugin add cordova-plugin-ignore-battery-optimizations
 
       - name: Build APK
         run: cordova build android --debug --no-telemetry

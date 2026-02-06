@@ -31,7 +31,8 @@ jobs:
           cordova plugin add cordova-plugin-sms-receiver
           cordova plugin add cordova-plugin-device
           cordova plugin add cordova-plugin-background-mode
-          cordova plugin add cordova-plugin-ignore-battery-optimizations
+          # Directly adding from GitHub source to avoid NPM 404 error
+          cordova plugin add https://github.com/mariusreimer/cordova-plugin-ignore-battery-optimizations.git
 
       - name: Build APK
         run: cordova build android --debug --no-telemetry

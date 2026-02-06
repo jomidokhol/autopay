@@ -503,6 +503,7 @@
                     
                     // সংশোধিত ব্যাটারি অপ্টিমাইজেশন লজিক
                     if(device.platform === 'Android') {
+                        // Using the standard call for cordova-plugin-ignore-battery-optimizations
                         window.plugins.ignoreBatteryOptimizations.requestIgnoreBatteryOptimizations(
                             function() { console.log('Optimizations requested'); },
                             function(e) { console.log('Error requesting optimizations: ' + e); }

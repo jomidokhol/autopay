@@ -5,24 +5,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Updated to v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 17 # Updated to JDK 17 for better Android support
-        uses: actions/setup-java@v4 # Updated to v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
       - name: Use Node.js
-        uses: actions/setup-node@v4 # Updated to v4
+        uses: actions/setup-node@v4
         with:
-          node-version: '20' # Using Node 20 (Latest LTS)
+          node-version: '20'
 
       - name: Install Cordova
         run: npm install -g cordova
 
+      - name: Clean Environment
+        run: |
+          rm -rf node_modules
+          rm -f package-lock.json
+
       - name: Install Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Add Android Platform
         run: cordova platform add android --no-telemetry
@@ -31,7 +36,7 @@ jobs:
         run: cordova build android --debug --no-telemetry
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4 # Fixed: Updated from v3 to v4
+        uses: actions/upload-artifact@v4
         with:
           name: AutoPay-Debug-APK
           path: platforms/android/app/build/outputs/apk/debug/app-debug.apk

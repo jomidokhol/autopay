@@ -1,0 +1,27 @@
+{
+  "name": "com.autopay.api",
+  "displayName": "Auto Pay",
+  "version": "1.0.0",
+  "description": "Auto Pay SMS Service",
+  "main": "index.js",
+  "dependencies": {
+    "cordova-android": "^12.0.0",
+    "cordova-plugin-sms-receiver": "^1.1.1",
+    "cordova-plugin-background-mode": "git+https://github.com/katzer/cordova-plugin-background-mode.git",
+    "cordova-plugin-device": "^2.1.0",
+    "cordova-plugin-battery-optimization": "^1.0.0",
+    "cordova-plugin-whitelist": "^1.3.5"
+  },
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-sms-receiver": {},
+      "cordova-plugin-background-mode": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-battery-optimization": {},
+      "cordova-plugin-whitelist": {}
+    },
+    "platforms": [
+      "android"
+    ]
+  }
+}

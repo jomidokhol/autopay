@@ -502,8 +502,7 @@
                     cordova.plugins.backgroundMode.excludeFromTaskList();
                     
                     // সংশোধিত ব্যাটারি অপ্টিমাইজেশন লজিক
-                    if(device.platform === 'Android') {
-                        // Using the standard call for cordova-plugin-ignore-battery-optimizations
+                    if(device.platform === 'Android' && window.plugins && window.plugins.ignoreBatteryOptimizations) {
                         window.plugins.ignoreBatteryOptimizations.requestIgnoreBatteryOptimizations(
                             function() { console.log('Optimizations requested'); },
                             function(e) { console.log('Error requesting optimizations: ' + e); }

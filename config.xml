@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.nur.autopay" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+    <name>Auto Pay</name>
+    <description>SMS Auto Payment Sync App</description>
+    <author email="dev@nur.com">Developer Nur</author>
+    <content src="index.html" />
+    
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <!-- প্রয়োজনীয় প্লাগিনসমূহ -->
+    <plugin name="cordova-plugin-sms-receive" spec="^1.1.0" />
+    <plugin name="cordova-plugin-background-mode" spec="^0.7.3" />
+    <plugin name="cordova-plugin-network-information" spec="^3.0.0" />
+    
+    <!-- এন্ড্রয়েড পারমিশন -->
+    <config-file target="AndroidManifest.xml" parent="/*">
+        <uses-permission android:name="android.permission.RECEIVE_SMS" />
+        <uses-permission android:name="android.permission.READ_SMS" />
+        <uses-permission android:name="android.permission.WAKE_LOCK" />
+        <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    </config-file>
+
+    <platform name="android">
+        <preference name="KeepRunning" value="true" />
+    </platform>
+</widget>

@@ -5,9 +5,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      # ১. আপনার মূল অ্যাপের কোড চেকআউট করা
+      - name: Checkout Main App
         uses: actions/checkout@v4
 
+      # ২. SMS প্লাগিনটি আলাদা ফোল্ডারে ডাউনলোড করা (গিটহাব অ্যাকশন দিয়ে)
+      - name: Checkout SMS Plugin
+        uses: actions/checkout@v4
+        with:
+          repository: andres-torres-marquez/cordova-plugin-sms-receive
+          path: custom_plugins/sms-receive
+
+      # ৩. ব্যাকগ্রাউন্ড মোড প্লাগিনটি আলাদা ফোল্ডারে ডাউনলোড করা
+      - name: Checkout Background Mode Plugin
+        uses: actions/checkout@v4
+        with:
+          repository: katzer/cordova-plugin-background-mode
+          path: custom_plugins/background-mode
+
+      # ৪. এনভায়রনমেন্ট সেটআপ
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -17,37 +33,31 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install Cordova
         run: npm install -g cordova
 
-      - name: Add Android Platform
-        run: cordova platform add android@12.0.0
-
-      - name: Download and Add Plugins (No Git Required)
+      # ৫. প্ল্যাটফর্ম এবং প্লাগিন যুক্ত করা
+      - name: Add Platform and Plugins
         run: |
-          # ১. প্লাগিনগুলোর ZIP ফাইল ডাউনলোড করা হচ্ছে
-          curl -L https://github.com/andres-torres-marquez/cordova-plugin-sms-receive/archive/refs/heads/master.zip -o sms.zip
-          curl -L https://github.com/katzer/cordova-plugin-background-mode/archive/refs/heads/master.zip -o bg.zip
+          cordova platform add android@12.0.0
           
-          # ২. আনজিপ করা হচ্ছে
-          unzip sms.zip
-          unzip bg.zip
+          # লোকাল ফোল্ডার থেকে প্লাগিনগুলো যুক্ত করা হচ্ছে (কোনো ডাউনলোড এরর হবে না)
+          cordova plugin add ./custom_plugins/sms-receive
+          cordova plugin add ./custom_plugins/background-mode
           
-          # ৩. আনজিপ হওয়া ফোল্ডার থেকে প্লাগিন যুক্ত করা হচ্ছে (ফোল্ডার নামগুলো চেক করে)
-          cordova plugin add ./cordova-plugin-sms-receive-master
-          cordova plugin add ./cordova-plugin-background-mode-master
-          
-          # ৪. অন্যান্য স্ট্যান্ডার্ড প্লাগিন যোগ করা হচ্ছে
+          # অনলাইন থেকে বাকি প্লাগিন
           cordova plugin add cordova-plugin-network-information
           cordova plugin add cordova-plugin-androidx-adapter
 
+      # ৬. APK তৈরি করা
       - name: Build APK
         run: cordova build android --debug
 
+      # ৭. আপলোড করা
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AutoPay-Build-APK
+          name: AutoPay-Final-APK
           path: platforms/android/app/build/outputs/apk/debug/app-debug.apk

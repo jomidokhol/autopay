@@ -1,27 +1,29 @@
 name: Build Android APK
-on: [push]
+on:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # ১. আপনার মূল অ্যাপের কোড চেকআউট করা
-      - name: Checkout Main App
+      # ১. আপনার মূল প্রজেক্ট (jomidokhol/autopay) চেকআউট করা
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # ২. SMS প্লাগিনটি আলাদা ফোল্ডারে ডাউনলোড করা (গিটহাব অ্যাকশন দিয়ে)
+      # ২. SMS প্লাগিন ডাউনলোড (সঠিক সোর্স থেকে)
       - name: Checkout SMS Plugin
         uses: actions/checkout@v4
         with:
-          repository: andres-torres-marquez/cordova-plugin-sms-receive
-          path: custom_plugins/sms-receive
+          repository: viskin/cordova-plugin-sms-receive
+          path: custom_plugins/cordova-plugin-sms-receive
 
-      # ৩. ব্যাকগ্রাউন্ড মোড প্লাগিনটি আলাদা ফোল্ডারে ডাউনলোড করা
+      # ৩. ব্যাকগ্রাউন্ড মোড প্লাগিন ডাউনলোড
       - name: Checkout Background Mode Plugin
         uses: actions/checkout@v4
         with:
           repository: katzer/cordova-plugin-background-mode
-          path: custom_plugins/background-mode
+          path: custom_plugins/cordova-plugin-background-mode
 
       # ৪. এনভায়রনমেন্ট সেটআপ
       - name: Set up JDK 17
@@ -30,32 +32,33 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Cordova
         run: npm install -g cordova
 
-      # ৫. প্ল্যাটফর্ম এবং প্লাগিন যুক্ত করা
+      # ৫. প্ল্যাটফর্ম এবং প্লাগিন কনফিগারেশন
       - name: Add Platform and Plugins
         run: |
+          # অ্যান্ড্রয়েড প্ল্যাটফর্ম যোগ করা
           cordova platform add android@12.0.0
           
-          # লোকাল ফোল্ডার থেকে প্লাগিনগুলো যুক্ত করা হচ্ছে (কোনো ডাউনলোড এরর হবে না)
-          cordova plugin add ./custom_plugins/sms-receive
-          cordova plugin add ./custom_plugins/background-mode
+          # ডাউনলোড করা ফোল্ডার থেকে প্লাগিন ইন্সটল (Offline Install)
+          cordova plugin add ./custom_plugins/cordova-plugin-sms-receive
+          cordova plugin add ./custom_plugins/cordova-plugin-background-mode
           
-          # অনলাইন থেকে বাকি প্লাগিন
+          # অন্যান্য প্রয়োজনীয় প্লাগিন
           cordova plugin add cordova-plugin-network-information
           cordova plugin add cordova-plugin-androidx-adapter
 
-      # ৬. APK তৈরি করা
+      # ৬. APK তৈরি
       - name: Build APK
         run: cordova build android --debug
 
-      # ৭. আপলোড করা
+      # ৭. APK আপলোড
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

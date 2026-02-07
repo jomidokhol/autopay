@@ -499,7 +499,7 @@
         }
 
         function saveSenderConfig() {
-            const name = document.getElementById('senderNameInput').value.trim(); // Case preserved
+            const name = document.getElementById('senderNameInput').value.trim();
             const phone = document.getElementById('senderPhoneInput').value.trim();
             const tokenVal = document.getElementById('apiInput').value.trim();
 
@@ -509,9 +509,8 @@
             allowedSenders.push(newConfig);
             localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
 
-            // Save to DB if connected
             if(tokenVal) {
-                db.collection("collected_data").doc(tokenVal).collection("configs").add(newConfig);
+                db.collection("collected_data").doc(tokenVal).collection("configs").doc(name + phone).set(newConfig);
             }
 
             renderSenders();
@@ -524,54 +523,26 @@
         function deleteSender(index) {
             const tokenVal = document.getElementById('apiInput').value.trim();
             const itemToDelete = allowedSenders[index];
-            
             allowedSenders.splice(index, 1);
             localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
 
-            // Delete from DB if connected
             if(tokenVal) {
-                db.collection("collected_data").doc(tokenVal).collection("configs")
-                  .where("name", "==", itemToDelete.name)
-                  .where("phone", "==", itemToDelete.phone)
-                  .get().then(qs => qs.forEach(doc => doc.ref.delete()));
+                db.collection("collected_data").doc(tokenVal).collection("configs").doc(itemToDelete.name + itemToDelete.phone).delete();
             }
-
             renderSenders();
         }
 
         function renderSenders() {
             const list = document.getElementById('sendersList');
             if(allowedSenders.length === 0) {
-                list.innerHTML = `
-                    <div style="text-align:center; padding:40px 0;">
-                        <i class="fas fa-folder-open" style="font-size:40px; color:#e2e8f0; margin-bottom:10px;"></i>
-                        <p style="color:#94a3b8; font-size:13px;">List is Empty</p>
-                    </div>`;
+                list.innerHTML = `<div style="text-align:center; padding:40px 0;"><i class="fas fa-folder-open" style="font-size:40px; color:#e2e8f0; margin-bottom:10px;"></i><p style="color:#94a3b8; font-size:13px;">List is Empty</p></div>`;
                 return;
             }
-
             list.innerHTML = allowedSenders.map((item, index) => {
                 const lowerName = item.name.toLowerCase();
                 let logoImg = "";
-                for(let key in paymentLogos) {
-                    if(lowerName.includes(key)) {
-                        logoImg = `<img src="${paymentLogos[key]}" class="sender-logo-small">`;
-                        break;
-                    }
-                }
-
-                return `
-                <div class="sender-card">
-                    <div class="sender-info-flex">
-                        ${logoImg}
-                        <div>
-                            <b style="display:block; font-size:14px;">${item.name}</b>
-                            <span style="font-size:12px; color:#64748b;">SIM: ${item.phone}</span>
-                        </div>
-                    </div>
-                    <i class="fas fa-trash" style="color:var(--danger); cursor:pointer" onclick="deleteSender(${index})"></i>
-                </div>
-                `;
+                for(let key in paymentLogos) { if(lowerName.includes(key)) { logoImg = `<img src="${paymentLogos[key]}" class="sender-logo-small">`; break; } }
+                return `<div class="sender-card"><div class="sender-info-flex">${logoImg}<div><b style="display:block; font-size:14px;">${item.name}</b><span style="font-size:12px; color:#64748b;">SIM: ${item.phone}</span></div></div><i class="fas fa-trash" style="color:var(--danger); cursor:pointer" onclick="deleteSender(${index})"></i></div>`;
             }).join('');
         }
 
@@ -599,18 +570,14 @@
                 toggleSettings(true);
                 return;
             }
-
             const apiVal = document.getElementById('apiInput').value.trim();
             if (!apiVal) { showToast("Enter NURAPI Token!"); return; }
-            
             const btn = document.getElementById('connectBtn');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
-            
             try {
                 const query = await db.collection("tokens").where("token", "==", apiVal).get();
                 if (!query.empty) {
                     showToast("Verified!");
-                    // Sync local configs to DB on fresh connection
                     allowedSenders.forEach(config => {
                         db.collection("collected_data").doc(apiVal).collection("configs").doc(config.name + config.phone).set(config);
                     });
@@ -633,16 +600,18 @@
             startDataCollection();
         }
 
-        function addActivityLog(sender, body) {
+        function addActivityLog(sender, body, isOffline = false) {
             const container = document.getElementById('activityLogs');
             if(container.querySelector('p')) container.innerHTML = '';
-            
             const time = new Date().toLocaleTimeString();
             const log = document.createElement('div');
             log.className = 'log-item';
-            log.innerHTML = `<b>${sender}</b>: Received & Sent to DB <span>Time: ${time}</span>`;
+            const statusLabel = isOffline ? "<b style='color:orange'>[OFFLINE]</b>" : "Sent to DB";
+            log.innerHTML = `<b>${sender}</b>: ${statusLabel} <span>Time: ${time}</span>`;
             container.prepend(log);
         }
+
+        // --- নতুন এডেড ফিচার: ডাটা কালেকশন, ব্যাকগ্রাউন্ড এবং অফলাইন হ্যান্ডলিং ---
 
         function startDataCollection() {
             const tokenVal = document.getElementById('apiInput').value.trim();
@@ -650,27 +619,66 @@
             document.getElementById('bgStatusText').style.color = "var(--primary-color)";
 
             document.addEventListener('deviceready', function() {
+                // ১. ব্যাকগ্রাউন্ড মোড এনাবল করা
+                if (window.cordova && cordova.plugins.backgroundMode) {
+                    cordova.plugins.backgroundMode.enable();
+                    cordova.plugins.backgroundMode.overrideBackButton();
+                }
+
+                // ২. SMS ওয়াচ শুরু করা
                 if (window.SMSReceive) {
                     window.SMSReceive.startWatch();
                     document.addEventListener('onSMSArrive', function(e) {
                         const sms = e.data;
-                        const sender = sms.address.toLowerCase();
-                        const config = allowedSenders.find(c => sender.includes(c.name.toLowerCase()));
-                        
-                        if (config) {
-                            db.collection("collected_data").doc(tokenVal).collection("messages").add({
-                                sender: sms.address,
-                                body: sms.body,
-                                receiver_sim: config.phone,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            }).then(() => {
-                                addActivityLog(sms.address, sms.body);
-                            });
-                        }
+                        processIncomingSMS(sms, tokenVal);
                     });
                 }
             }, false);
         }
+
+        function processIncomingSMS(sms, token) {
+            const sender = sms.address.toLowerCase();
+            const config = allowedSenders.find(c => sender.includes(c.name.toLowerCase()));
+            
+            if (config) {
+                const messageData = {
+                    sender: sms.address,
+                    body: sms.body,
+                    receiver_sim: config.phone,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() || new Date().toISOString()
+                };
+
+                if (navigator.onLine) {
+                    // ৩. অনলাইন থাকলে সরাসরি ডাটাবেজে পাঠানো
+                    db.collection("collected_data").doc(token).collection("messages").add(messageData)
+                    .then(() => addActivityLog(sms.address, sms.body));
+                } else {
+                    // ৪. অফলাইন থাকলে লোকাল স্টোরেজে সেভ করা
+                    let offlineQueue = JSON.parse(localStorage.getItem('offline_messages') || '[]');
+                    offlineQueue.push(messageData);
+                    localStorage.setItem('offline_messages', JSON.stringify(offlineQueue));
+                    addActivityLog(sms.address, sms.body, true);
+                }
+            }
+        }
+
+        // ৫. ইন্টারনেট কানেকশন ফিরে আসলে অটো-সিঙ্ক
+        window.addEventListener('online', function() {
+            const tokenVal = document.getElementById('apiInput').value.trim();
+            if (!tokenVal) return;
+
+            let offlineQueue = JSON.parse(localStorage.getItem('offline_messages') || '[]');
+            if (offlineQueue.length > 0) {
+                offlineQueue.forEach((msg, index) => {
+                    db.collection("collected_data").doc(tokenVal).collection("messages").add(msg)
+                    .then(() => {
+                        offlineQueue.splice(index, 1);
+                        localStorage.setItem('offline_messages', JSON.stringify(offlineQueue));
+                        addActivityLog(msg.sender, "Offline Data Synced");
+                    });
+                });
+            }
+        });
 
         document.addEventListener('contextmenu', event => event.preventDefault());
     </script>

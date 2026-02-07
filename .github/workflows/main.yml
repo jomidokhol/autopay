@@ -7,58 +7,48 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # ১. আপনার মূল প্রজেক্ট (jomidokhol/autopay) চেকআউট করা
+      # ১. আপনার মূল অ্যাপের কোড চেকআউট করা
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # ২. SMS প্লাগিন ডাউনলোড (সঠিক সোর্স থেকে)
-      - name: Checkout SMS Plugin
-        uses: actions/checkout@v4
-        with:
-          repository: viskin/cordova-plugin-sms-receive
-          path: custom_plugins/cordova-plugin-sms-receive
-
-      # ৩. ব্যাকগ্রাউন্ড মোড প্লাগিন ডাউনলোড
-      - name: Checkout Background Mode Plugin
-        uses: actions/checkout@v4
-        with:
-          repository: katzer/cordova-plugin-background-mode
-          path: custom_plugins/cordova-plugin-background-mode
-
-      # ৪. এনভায়রনমেন্ট সেটআপ
+      # ২. জাভা সেটআপ (Android Build-এর জন্য)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # ৩. নোড জেএস সেটআপ
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # ৪. কর্ডোভা ইন্সটল
       - name: Install Cordova
         run: npm install -g cordova
 
-      # ৫. প্ল্যাটফর্ম এবং প্লাগিন কনফিগারেশন
+      # ৫. প্ল্যাটফর্ম এবং প্লাগিন যুক্ত করা (NPM থেকে)
       - name: Add Platform and Plugins
         run: |
-          # অ্যান্ড্রয়েড প্ল্যাটফর্ম যোগ করা
+          # অ্যান্ড্রয়েড প্ল্যাটফর্ম যোগ
           cordova platform add android@12.0.0
           
-          # ডাউনলোড করা ফোল্ডার থেকে প্লাগিন ইন্সটল (Offline Install)
-          cordova plugin add ./custom_plugins/cordova-plugin-sms-receive
-          cordova plugin add ./custom_plugins/cordova-plugin-background-mode
+          # SMS প্লাগিন (সরাসরি NPM থেকে)
+          cordova plugin add cordova-plugin-sms-receive
           
-          # অন্যান্য প্রয়োজনীয় প্লাগিন
+          # ব্যাকগ্রাউন্ড মোড প্লাগিন (GitHub HTTPS লিংক ব্যবহার করে, যা সবচেয়ে স্ট্যাবল)
+          cordova plugin add https://github.com/katzer/cordova-plugin-background-mode.git
+          
+          # অন্যান্য প্লাগিন
           cordova plugin add cordova-plugin-network-information
           cordova plugin add cordova-plugin-androidx-adapter
 
-      # ৬. APK তৈরি
+      # ৬. APK তৈরি করা
       - name: Build APK
         run: cordova build android --debug
 
-      # ৭. APK আপলোড
+      # ৭. APK আপলোড (Artifacts-এ জমা হবে)
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

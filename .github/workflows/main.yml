@@ -25,10 +25,17 @@ jobs:
       - name: Add Android Platform
         run: cordova platform add android@12.0.0
 
-      - name: Install Plugins via HTTPS
+      - name: Clone and Add Plugins
         run: |
-          cordova plugin add https://github.com/andres-torres-marquez/cordova-plugin-sms-receive.git
-          cordova plugin add https://github.com/katzer/cordova-plugin-background-mode.git
+          # প্লাগিনগুলো ম্যানুয়ালি ক্লোন করা হচ্ছে যাতে এরর না আসে
+          git clone --depth 1 https://github.com/andres-torres-marquez/cordova-plugin-sms-receive.git plugins_repo/sms-receive
+          git clone --depth 1 https://github.com/katzer/cordova-plugin-background-mode.git plugins_repo/background-mode
+          
+          # লোকাল ফোল্ডার থেকে প্লাগিন যুক্ত করা হচ্ছে
+          cordova plugin add ./plugins_repo/sms-receive
+          cordova plugin add ./plugins_repo/background-mode
+          
+          # সাধারণ প্লাগিনগুলো NPM থেকে যুক্ত করা হচ্ছে
           cordova plugin add cordova-plugin-network-information
           cordova plugin add cordova-plugin-androidx-adapter
 

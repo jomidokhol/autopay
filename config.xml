@@ -3,6 +3,8 @@
     <name>Auto Pay</name>
     <description>SMS Auto Payment Sync App</description>
     <author email="dev@nur.com">Developer Nur</author>
+    
+    <!-- আপনার HTML ফাইলটি অবশ্যই www ফোল্ডারের ভেতর থাকতে হবে -->
     <content src="index.html" />
     
     <access origin="*" />
@@ -10,15 +12,23 @@
     <allow-intent href="https://*/*" />
 
     <preference name="AndroidXEnabled" value="true" />
+    <preference name="KeepRunning" value="true" />
+    <preference name="ShowTitle" value="false" />
 
     <platform name="android">
-        <preference name="KeepRunning" value="true" />
         <config-file target="AndroidManifest.xml" parent="/*">
             <uses-permission android:name="android.permission.RECEIVE_SMS" />
             <uses-permission android:name="android.permission.READ_SMS" />
             <uses-permission android:name="android.permission.WAKE_LOCK" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <!-- অ্যান্ড্রয়েড ১৩+ এর জন্য নোটিফিকেশন পারমিশন (ব্যাকগ্রাউন্ডে সচল থাকতে সাহায্য করবে) -->
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
             <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
         </config-file>
+        
+        <!-- অ্যান্ড্রয়েড ১২+ এ ব্যাকগ্রাউন্ড সার্ভিস ঠিকমতো চলার জন্য অ্যাপটিকে এক্সপোর্টেড ট্রু রাখা জরুরি -->
+        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/application/activity[@android:name='MainActivity']">
+            <activity android:exported="true" />
+        </edit-config>
     </platform>
 </widget>

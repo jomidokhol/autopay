@@ -1,0 +1,11 @@
+{
+  "name": "com.nur.autopay",
+  "displayName": "AutoPay",
+  "version": "1.0.0",
+  "dependencies": {
+    "cordova-android": "^12.0.0",
+    "cordova-plugin-sms-receive": "^1.1.0",
+    "cordova-plugin-background-mode": "^0.7.3",
+    "cordova-plugin-network-information": "^3.0.0"
+  }
+}

@@ -3,21 +3,9 @@
   "displayName": "AutoPay",
   "version": "1.0.0",
   "dependencies": {
-    "cordova-android": "^12.0.0",
-    "cordova-plugin-sms-receive": "git+https://github.com/andres-torres-marquez/cordova-plugin-sms-receive.git",
-    "cordova-plugin-background-mode": "git+https://github.com/katzer/cordova-plugin-background-mode.git",
-    "cordova-plugin-network-information": "^3.0.0",
-    "cordova-plugin-androidx-adapter": "^1.1.3"
+    "cordova-android": "^12.0.0"
   },
-  "cordova": {
-    "platforms": [
-      "android"
-    ],
-    "plugins": {
-      "cordova-plugin-sms-receive": {},
-      "cordova-plugin-background-mode": {},
-      "cordova-plugin-network-information": {},
-      "cordova-plugin-androidx-adapter": {}
-    }
+  "devDependencies": {
+    "cordova-plugin-androidx-adapter": "^1.1.3"
   }
 }

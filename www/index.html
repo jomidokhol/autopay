@@ -447,240 +447,264 @@
     </div>
 
     <div id="toast">Message here</div>
+<script>
+    // --- FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCFNNXY4oRMg8AjhWa9PqCN8gdILmwdRk0",
+        authDomain: "autopay-api.firebaseapp.com",
+        projectId: "autopay-api",
+        storageBucket: "autopay-api.firebasestorage.app",
+        messagingSenderId: "560907178391",
+        appId: "1:560907178391:web:aa544aedc91be464cd74d2",
+        measurementId: "G-X7D91TPCWL"
+    };
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCFNNXY4oRMg8AjhWa9PqCN8gdILmwdRk0",
-            authDomain: "autopay-api.firebaseapp.com",
-            projectId: "autopay-api",
-            storageBucket: "autopay-api.firebasestorage.app",
-            messagingSenderId: "560907178391",
-            appId: "1:560907178391:web:aa544aedc91be464cd74d2",
-            measurementId: "G-X7D91TPCWL"
-        };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let allowedSenders = JSON.parse(localStorage.getItem('allowedSenders') || '[]');
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        let allowedSenders = JSON.parse(localStorage.getItem('allowedSenders') || '[]');
+    const paymentLogos = {
+        'bkash': 'https://i.ibb.co.com/4Zdk93RY/c34b1744cdd3f245d55d444f74c9f9b9.png',
+        'nagad': 'https://i.ibb.co.com/ZQ3Rx9d/3d0f539fb2129a873e763f72850cc387.png',
+        'upay': 'https://i.ibb.co.com/SDgq7VJW/vecteezy-upay-logo-mobile-banking-app-icon-transparent-background-68764291.png',
+        'rocket': 'https://i.ibb.co.com/q3mm8LWb/IMG-20260207-085936.png'
+    };
 
-        const paymentLogos = {
-            'bkash': 'https://i.ibb.co.com/4Zdk93RY/c34b1744cdd3f245d55d444f74c9f9b9.png',
-            'nagad': 'https://i.ibb.co.com/ZQ3Rx9d/3d0f539fb2129a873e763f72850cc387.png',
-            'upay': 'https://i.ibb.co.com/SDgq7VJW/vecteezy-upay-logo-mobile-banking-app-icon-transparent-background-68764291.png',
-            'rocket': 'https://i.ibb.co.com/q3mm8LWb/IMG-20260207-085936.png'
-        };
+    // --- APP INITIALIZATION ---
+    window.onload = () => {
+        renderSenders();
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+        }, 1500);
+    };
 
-        window.onload = () => {
-            renderSenders();
-            setTimeout(() => {
-                document.getElementById('loader').style.opacity = '0';
-                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-            }, 1500);
-        };
+    // Cordova Device Ready
+    document.addEventListener('deviceready', function() {
+        // ১. ব্যাকগ্রাউন্ড মোড সেটিংস
+        cordova.plugins.backgroundMode.enable();
+        cordova.plugins.backgroundMode.setDefaults({
+            title: 'Auto Pay Running',
+            text: 'Monitoring messages in background...',
+            icon: 'icon', 
+            color: '10b981'
+        });
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.add('show');
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        // ২. এসএমএস ওয়াচ শুরু
+        if (window.SMSReceive) {
+            window.SMSReceive.startWatch();
+            document.addEventListener('onSMSArrive', function(e) {
+                processIncomingSMS(e.data);
+            });
         }
+        
+        // ৩. অফলাইন ডাটা চেক (অ্যাপ ওপেন হলে)
+        checkAndSyncOfflineData();
+    }, false);
 
-        function toggleSettings(show) {
-            const overlay = document.getElementById('settingsOverlay');
-            if(show) overlay.classList.add('open');
-            else {
-                overlay.classList.remove('open');
-                document.getElementById('addForm').classList.remove('active');
+    // ইন্টারনেট ফিরে আসলে অটো সিঙ্ক
+    window.addEventListener('online', checkAndSyncOfflineData);
+
+    // --- CORE FUNCTIONS ---
+
+    function processIncomingSMS(sms) {
+        const sender = sms.address.toLowerCase();
+        const tokenVal = document.getElementById('apiInput').value.trim();
+        
+        // সেটিংসের সেন্ডার নাম মিল আছে কি না চেক করা
+        const config = allowedSenders.find(c => sender.includes(c.name.toLowerCase()));
+        
+        if (config && tokenVal) {
+            const data = {
+                sender: sms.address,
+                body: sms.body,
+                receiver_sim: config.phone,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (navigator.onLine) {
+                sendToFirebase(tokenVal, data);
+            } else {
+                saveOffline(data);
             }
         }
+    }
 
-        function toggleAddForm() {
-            document.getElementById('addForm').classList.toggle('active');
-        }
+    function saveOffline(data) {
+        let list = JSON.parse(localStorage.getItem('pending_sms') || '[]');
+        // অফলাইন ডাটার জন্য সার্ভার টাইমস্ট্যাম্প বদলে লোকাল টাইম দেওয়া হচ্ছে
+        data.timestamp = new Date().toISOString(); 
+        list.push(data);
+        localStorage.setItem('pending_sms', JSON.stringify(list));
+        addActivityLog(data.sender, "Saved to Offline Storage", true);
+    }
 
-        function saveSenderConfig() {
-            const name = document.getElementById('senderNameInput').value.trim();
-            const phone = document.getElementById('senderPhoneInput').value.trim();
-            const tokenVal = document.getElementById('apiInput').value.trim();
-
-            if(!name || !phone) { showToast("Fill all fields!"); return; }
-
-            const newConfig = { name: name, phone: phone };
-            allowedSenders.push(newConfig);
-            localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
-
-            if(tokenVal) {
-                db.collection("collected_data").doc(tokenVal).collection("configs").doc(name + phone).set(newConfig);
+    function checkAndSyncOfflineData() {
+        const tokenVal = document.getElementById('apiInput').value.trim();
+        if (navigator.onLine && tokenVal) {
+            let list = JSON.parse(localStorage.getItem('pending_sms') || '[]');
+            if (list.length > 0) {
+                list.forEach((item) => {
+                    // পুনরায় সার্ভার টাইমস্ট্যাম্প সেট করা হচ্ছে
+                    item.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                    sendToFirebase(tokenVal, item);
+                });
+                localStorage.removeItem('pending_sms');
+                showToast("Offline data synced!");
             }
-
-            renderSenders();
-            toggleAddForm();
-            document.getElementById('senderNameInput').value = '';
-            document.getElementById('senderPhoneInput').value = '';
-            showToast("Added Successfully");
         }
+    }
 
-        function deleteSender(index) {
-            const tokenVal = document.getElementById('apiInput').value.trim();
-            const itemToDelete = allowedSenders[index];
-            allowedSenders.splice(index, 1);
-            localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
+    function sendToFirebase(token, data) {
+        db.collection("collected_data").doc(token).collection("messages").add(data)
+        .then(() => {
+            addActivityLog(data.sender, "Sent to Database");
+        }).catch(err => {
+            console.error("Firestore Error: ", err);
+        });
+    }
 
-            if(tokenVal) {
-                db.collection("collected_data").doc(tokenVal).collection("configs").doc(itemToDelete.name + itemToDelete.phone).delete();
+    // --- UI & CONFIG FUNCTIONS ---
+
+    async function handleConnect() {
+        if (allowedSenders.length === 0) {
+            alert("Please add a Configuration in Settings first!");
+            toggleSettings(true);
+            return;
+        }
+        const apiVal = document.getElementById('apiInput').value.trim();
+        if (!apiVal) { showToast("Enter NURAPI Token!"); return; }
+        
+        const btn = document.getElementById('connectBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
+        
+        try {
+            const query = await db.collection("tokens").where("token", "==", apiVal).get();
+            if (!query.empty) {
+                showToast("Connected Successfully!");
+                // সিঙ্ক সেটিংস টু ফায়ারস্টোর
+                allowedSenders.forEach(config => {
+                    db.collection("collected_data").doc(apiVal).collection("configs").doc(config.name + config.phone).set(config);
+                });
+                activateServiceUI();
+                checkAndSyncOfflineData();
+            } else {
+                showToast("Invalid Token!");
+                btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE';
             }
-            renderSenders();
+        } catch (e) { 
+            showToast("Connection Error!"); 
+            btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE'; 
         }
+    }
 
-        function renderSenders() {
-            const list = document.getElementById('sendersList');
-            if(allowedSenders.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:40px 0;"><i class="fas fa-folder-open" style="font-size:40px; color:#e2e8f0; margin-bottom:10px;"></i><p style="color:#94a3b8; font-size:13px;">List is Empty</p></div>`;
-                return;
-            }
-            list.innerHTML = allowedSenders.map((item, index) => {
-                const lowerName = item.name.toLowerCase();
-                let logoImg = "";
-                for(let key in paymentLogos) { if(lowerName.includes(key)) { logoImg = `<img src="${paymentLogos[key]}" class="sender-logo-small">`; break; } }
-                return `<div class="sender-card"><div class="sender-info-flex">${logoImg}<div><b style="display:block; font-size:14px;">${item.name}</b><span style="font-size:12px; color:#64748b;">SIM: ${item.phone}</span></div></div><i class="fas fa-trash" style="color:var(--danger); cursor:pointer" onclick="deleteSender(${index})"></i></div>`;
-            }).join('');
+    function activateServiceUI() {
+        document.getElementById('statusWrapper').classList.replace('status-inactive', 'status-active');
+        document.getElementById('statusText').innerText = "Active";
+        document.getElementById('bgStatusText').innerText = "Running";
+        document.getElementById('bgStatusText').style.color = "var(--primary-color)";
+        const btn = document.getElementById('connectBtn');
+        btn.style.background = "#64748b";
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> SERVICE RUNNING';
+    }
+
+    function addActivityLog(sender, status, isWarning = false) {
+        const container = document.getElementById('activityLogs');
+        if(container.querySelector('p')) container.innerHTML = '';
+        
+        const time = new Date().toLocaleTimeString();
+        const log = document.createElement('div');
+        log.className = 'log-item';
+        if(isWarning) log.style.borderLeftColor = 'orange';
+        
+        log.innerHTML = `<b>${sender}</b>: ${status} <span>Time: ${time}</span>`;
+        container.prepend(log);
+    }
+
+    // --- OTHER UI HELPERS (Settings, Paste, etc.) ---
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => { t.classList.remove('show'); }, 3000);
+    }
+
+    function toggleSettings(show) {
+        const overlay = document.getElementById('settingsOverlay');
+        if(show) overlay.classList.add('open');
+        else {
+            overlay.classList.remove('open');
+            document.getElementById('addForm').classList.remove('active');
         }
+    }
 
-        function toggleClearIcon() {
-            const input = document.getElementById('apiInput');
-            const icon = document.getElementById('clearIcon');
-            icon.style.display = input.value.length > 0 ? "block" : "none";
+    function toggleAddForm() {
+        document.getElementById('addForm').classList.toggle('active');
+    }
+
+    function saveSenderConfig() {
+        const name = document.getElementById('senderNameInput').value.trim();
+        const phone = document.getElementById('senderPhoneInput').value.trim();
+        const tokenVal = document.getElementById('apiInput').value.trim();
+        if(!name || !phone) { showToast("Fill all fields!"); return; }
+        const newConfig = { name: name, phone: phone };
+        allowedSenders.push(newConfig);
+        localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
+        if(tokenVal) {
+            db.collection("collected_data").doc(tokenVal).collection("configs").doc(name + phone).set(newConfig);
         }
+        renderSenders();
+        toggleAddForm();
+        document.getElementById('senderNameInput').value = '';
+        document.getElementById('senderPhoneInput').value = '';
+        showToast("Added Successfully");
+    }
 
-        function clearInputField() {
-            const input = document.getElementById('apiInput');
-            input.value = "";
-            toggleClearIcon();
+    function deleteSender(index) {
+        const tokenVal = document.getElementById('apiInput').value.trim();
+        const itemToDelete = allowedSenders[index];
+        allowedSenders.splice(index, 1);
+        localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
+        if(tokenVal) {
+            db.collection("collected_data").doc(tokenVal).collection("configs").doc(itemToDelete.name + itemToDelete.phone).delete();
         }
+        renderSenders();
+    }
 
-        async function pasteFromClipboard() {
+    function renderSenders() {
+        const list = document.getElementById('sendersList');
+        if(allowedSenders.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:40px 0;"><i class="fas fa-folder-open" style="font-size:40px; color:#e2e8f0; margin-bottom:10px;"></i><p style="color:#94a3b8; font-size:13px;">List is Empty</p></div>`;
+            return;
+        }
+        list.innerHTML = allowedSenders.map((item, index) => {
+            const lowerName = item.name.toLowerCase();
+            let logoImg = "";
+            for(let key in paymentLogos) { if(lowerName.includes(key)) { logoImg = `<img src="${paymentLogos[key]}" class="sender-logo-small">`; break; } }
+            return `<div class="sender-card"><div class="sender-info-flex">${logoImg}<div><b style="display:block; font-size:14px;">${item.name}</b><span style="font-size:12px; color:#64748b;">SIM: ${item.phone}</span></div></div><i class="fas fa-trash" style="color:var(--danger); cursor:pointer" onclick="deleteSender(${index})"></i></div>`;
+        }).join('');
+    }
+
+    function toggleClearIcon() {
+        const input = document.getElementById('apiInput');
+        document.getElementById('clearIcon').style.display = input.value.length > 0 ? "block" : "none";
+    }
+
+    function clearInputField() {
+        document.getElementById('apiInput').value = "";
+        toggleClearIcon();
+    }
+
+    async function pasteFromClipboard() {
+        try {
             const text = await navigator.clipboard.readText();
             document.getElementById('apiInput').value = text;
             toggleClearIcon();
-        }
+        } catch (e) { showToast("Paste failed!"); }
+    }
 
-        async function handleConnect() {
-            if (allowedSenders.length === 0) {
-                alert("Action Denied! Please add at least one Configuration in Settings before connecting.");
-                toggleSettings(true);
-                return;
-            }
-            const apiVal = document.getElementById('apiInput').value.trim();
-            if (!apiVal) { showToast("Enter NURAPI Token!"); return; }
-            const btn = document.getElementById('connectBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
-            try {
-                const query = await db.collection("tokens").where("token", "==", apiVal).get();
-                if (!query.empty) {
-                    showToast("Verified!");
-                    allowedSenders.forEach(config => {
-                        db.collection("collected_data").doc(apiVal).collection("configs").doc(config.name + config.phone).set(config);
-                    });
-                    activateService();
-                } else {
-                    showToast("Invalid Token!");
-                    btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE';
-                }
-            } catch (e) { showToast("Connection Error!"); btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE'; }
-        }
-
-        function activateService() {
-            const wrapper = document.getElementById('statusWrapper');
-            const statusText = document.getElementById('statusText');
-            const connectBtn = document.getElementById('connectBtn');
-            wrapper.classList.replace('status-inactive', 'status-active');
-            statusText.innerText = "Active";
-            connectBtn.style.background = "#64748b";
-            connectBtn.innerHTML = '<i class="fas fa-check-circle"></i> SERVICE RUNNING';
-            startDataCollection();
-        }
-
-        function addActivityLog(sender, body, isOffline = false) {
-            const container = document.getElementById('activityLogs');
-            if(container.querySelector('p')) container.innerHTML = '';
-            const time = new Date().toLocaleTimeString();
-            const log = document.createElement('div');
-            log.className = 'log-item';
-            const statusLabel = isOffline ? "<b style='color:orange'>[OFFLINE]</b>" : "Sent to DB";
-            log.innerHTML = `<b>${sender}</b>: ${statusLabel} <span>Time: ${time}</span>`;
-            container.prepend(log);
-        }
-
-        // --- নতুন এডেড ফিচার: ডাটা কালেকশন, ব্যাকগ্রাউন্ড এবং অফলাইন হ্যান্ডলিং ---
-
-        function startDataCollection() {
-            const tokenVal = document.getElementById('apiInput').value.trim();
-            document.getElementById('bgStatusText').innerText = "Running";
-            document.getElementById('bgStatusText').style.color = "var(--primary-color)";
-
-            document.addEventListener('deviceready', function() {
-                // ১. ব্যাকগ্রাউন্ড মোড এনাবল করা
-                if (window.cordova && cordova.plugins.backgroundMode) {
-                    cordova.plugins.backgroundMode.enable();
-                    cordova.plugins.backgroundMode.overrideBackButton();
-                }
-
-                // ২. SMS ওয়াচ শুরু করা
-                if (window.SMSReceive) {
-                    window.SMSReceive.startWatch();
-                    document.addEventListener('onSMSArrive', function(e) {
-                        const sms = e.data;
-                        processIncomingSMS(sms, tokenVal);
-                    });
-                }
-            }, false);
-        }
-
-        function processIncomingSMS(sms, token) {
-            const sender = sms.address.toLowerCase();
-            const config = allowedSenders.find(c => sender.includes(c.name.toLowerCase()));
-            
-            if (config) {
-                const messageData = {
-                    sender: sms.address,
-                    body: sms.body,
-                    receiver_sim: config.phone,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp() || new Date().toISOString()
-                };
-
-                if (navigator.onLine) {
-                    // ৩. অনলাইন থাকলে সরাসরি ডাটাবেজে পাঠানো
-                    db.collection("collected_data").doc(token).collection("messages").add(messageData)
-                    .then(() => addActivityLog(sms.address, sms.body));
-                } else {
-                    // ৪. অফলাইন থাকলে লোকাল স্টোরেজে সেভ করা
-                    let offlineQueue = JSON.parse(localStorage.getItem('offline_messages') || '[]');
-                    offlineQueue.push(messageData);
-                    localStorage.setItem('offline_messages', JSON.stringify(offlineQueue));
-                    addActivityLog(sms.address, sms.body, true);
-                }
-            }
-        }
-
-        // ৫. ইন্টারনেট কানেকশন ফিরে আসলে অটো-সিঙ্ক
-        window.addEventListener('online', function() {
-            const tokenVal = document.getElementById('apiInput').value.trim();
-            if (!tokenVal) return;
-
-            let offlineQueue = JSON.parse(localStorage.getItem('offline_messages') || '[]');
-            if (offlineQueue.length > 0) {
-                offlineQueue.forEach((msg, index) => {
-                    db.collection("collected_data").doc(tokenVal).collection("messages").add(msg)
-                    .then(() => {
-                        offlineQueue.splice(index, 1);
-                        localStorage.setItem('offline_messages', JSON.stringify(offlineQueue));
-                        addActivityLog(msg.sender, "Offline Data Synced");
-                    });
-                });
-            }
-        });
-
-        document.addEventListener('contextmenu', event => event.preventDefault());
-    </script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+</script>
 </body>
 </html>

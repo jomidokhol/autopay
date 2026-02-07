@@ -89,7 +89,7 @@
             height: 70px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             z-index: 100;
             padding: 0 20px;
@@ -101,8 +101,13 @@
             gap: 10px;
         }
 
-        .header-logo {
-            height: 35px;
+        .header-logo { height: 35px; }
+
+        .settings-icon {
+            font-size: 22px;
+            color: var(--text-gray);
+            cursor: pointer;
+            padding: 5px;
         }
 
         /* --- MAIN CONTENT --- */
@@ -119,6 +124,7 @@
             box-shadow: var(--shadow);
             border: 1px solid rgba(16, 185, 129, 0.1);
             animation: slideUp 0.6s ease;
+            margin-bottom: 20px;
         }
 
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -138,9 +144,9 @@
             align-items: center;
         }
 
-        input#apiInput {
+        input#apiInput, .settings-input {
             width: 100%;
-            padding: 15px 120px 15px 15px;
+            padding: 15px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             outline: none;
@@ -148,7 +154,8 @@
             transition: 0.3s;
         }
 
-        input#apiInput:focus { border-color: var(--primary-color); }
+        input#apiInput { padding-right: 120px; }
+        input#apiInput:focus, .settings-input:focus { border-color: var(--primary-color); }
 
         .input-controls {
             position: absolute;
@@ -182,6 +189,12 @@
             margin-bottom: 25px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            align-items: center;
             gap: 6px;
         }
 
@@ -209,51 +222,96 @@
             transition: 0.3s;
         }
 
-        .connect-btn:active { transform: scale(0.96); }
-
-        /* --- NEW FOOTER STYLES (MATCHING API-GEN) --- */
-        footer {
-            text-align: center;
-            padding: 40px 0;
-            margin-top: 30px;
-            color: var(--text-gray);
-            font-size: 14px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .footer-buttons {
+        /* --- ACTIVITY LOGS --- */
+        .log-container {
+            max-height: 250px;
+            overflow-y: auto;
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .btn-outline {
-            padding: 12px 20px;
-            background-color: transparent;
-            color: var(--text-gray);
-            border: 1px solid var(--border-color);
+        .log-item {
+            padding: 12px;
+            background: #f8fafc;
             border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
+            border-left: 4px solid var(--primary-color);
+            font-size: 12px;
+        }
+
+        .log-item b { color: var(--text-dark); }
+        .log-item span { color: var(--text-gray); display: block; margin-top: 4px; }
+
+        /* --- SIDEBAR SETTINGS --- */
+        #settingsOverlay {
+            position: fixed;
+            top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%;
+            background: white;
+            z-index: 2000;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #settingsOverlay.open { right: 0; }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
         }
 
-        .btn-outline:hover {
-            background-color: white;
-            color: var(--primary-color);
-            border-color: var(--primary-color);
+        .add-config-btn {
+            width: 35px; height: 35px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
         }
 
-        footer p a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 700;
+        .sidebar-content { padding: 20px; flex: 1; overflow-y: auto; }
+
+        .sender-card {
+            background: #f8fafc;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .sender-info-flex {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sender-logo-small {
+            height: 22px;
+            width: 22px;
+            object-fit: contain;
+        }
+
+        .add-form-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: 0.3s ease;
+            background: #fff;
+        }
+
+        .add-form-container.active {
+            max-height: 300px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         /* --- TOAST --- */
@@ -267,60 +325,58 @@
             padding: 14px 25px;
             border-radius: 15px;
             font-size: 13px;
-            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transition: 0.5s;
             z-index: 10000;
             width: 85%;
             max-width: 400px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         #toast.show { bottom: 30px; }
 
-        /* --- MODAL --- */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: none;
+        .payment-methods {
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
-            padding: 20px;
+            gap: 15px;
+            margin-top: 10px;
         }
+        .payment-methods img { height: 25px; width: auto; opacity: 0.8; }
 
-        .modal-box {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
+        footer {
             text-align: center;
-            max-width: 400px;
+            padding: 30px 0;
+            width: 100%;
         }
 
-        .modal-icon {
-            font-size: 40px;
-            color: var(--primary-color);
-            margin-bottom: 15px;
+        footer p {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: var(--text-gray);
+            margin: 0;
         }
     </style>
 </head>
 <body>
 
-    <!-- Loading Screen -->
     <div id="loader">
         <img src="https://i.ibb.co.com/ZpYtjLT8/1000043015-removebg-preview.png" class="loader-logo" alt="Logo">
         <div class="spinner"></div>
     </div>
 
-    <!-- Sticky Header -->
     <header>
         <div class="header-content">
             <img src="https://i.ibb.co.com/ZpYtjLT8/1000043015-removebg-preview.png" class="header-logo" alt="Logo">
             <span style="font-weight: 800; color: var(--text-dark);">AUTO PAY</span>
         </div>
+        <i class="fas fa-cog settings-icon" onclick="toggleSettings(true)"></i>
     </header>
 
     <div class="container">
+        <!-- Configuration Card -->
         <div class="card">
             <div class="title">Service Configuration</div>
             
@@ -334,8 +390,14 @@
             </div>
 
             <div id="statusWrapper" class="status-container status-inactive">
-                <div class="status-dot"></div>
-                <span>Status: <b id="statusText">Inactive</b></span>
+                <div class="status-left">
+                    <div class="status-dot"></div>
+                    <span>Status: <b id="statusText">Inactive</b></span>
+                </div>
+                <div class="status-right" style="color: var(--text-gray); font-size: 11px;">
+                    <i class="fas fa-microchip"></i>
+                    <span>BG: <b id="bgStatusText">Stopped</b></span>
+                </div>
             </div>
 
             <button class="connect-btn" id="connectBtn" onclick="handleConnect()">
@@ -343,32 +405,48 @@
             </button>
         </div>
 
-        <!-- New Footer Section -->
-        <footer>
-            <div class="footer-buttons">
-                <a href="#" class="btn-outline" onclick="alert('Instruction Manual Coming Soon!'); return false;">
-                    <i class="fas fa-book"></i> How to Activate Service?
-                </a>
-                <a href="https://autopay-api.vercel.app/" target="_blank" class="btn-outline">
-                    <i class="fas fa-key"></i> Get API Key
-                </a>
+        <!-- Activity Logs Card -->
+        <div class="card">
+            <div class="title" style="font-size: 1rem; text-align: left; margin-bottom: 15px;">
+                <i class="fas fa-history" style="color: var(--primary-color);"></i> Recent Activities
             </div>
-            <p>Auto Pay API System <b>&copy; 2026</b> | Powerd by <a href="https://www.facebook.com/NURtheBackBencher" target="_blank">Developer Nur</a></p>
+            <div id="activityLogs" class="log-container">
+                <p style="text-align: center; color: var(--text-gray); font-size: 12px; padding: 20px;">No message activity detected</p>
+            </div>
+        </div>
+
+        <div class="payment-methods">
+            <img src="https://i.ibb.co.com/4Zdk93RY/c34b1744cdd3f245d55d444f74c9f9b9.png" alt="Bkash">
+            <img src="https://i.ibb.co.com/ZQ3Rx9d/3d0f539fb2129a873e763f72850cc387.png" alt="Nagad">
+            <img src="https://i.ibb.co.com/SDgq7VJW/vecteezy-upay-logo-mobile-banking-app-icon-transparent-background-68764291.png" alt="Upay">
+            <img src="https://i.ibb.co.com/q3mm8LWb/IMG-20260207-085936.png" alt="Rocket">
+        </div>
+
+        <footer>
+            <p>Auto Pay System <b>&copy; 2026</b> | Powerd by <a href="https://www.facebook.com/NURtheBackBencher" target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 700;">Developer Nur</a></p>
         </footer>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast">Message here</div>
-
-    <!-- Permission Modal -->
-    <div class="modal" id="permModal">
-        <div class="modal-box">
-            <div class="modal-icon"><i class="fas fa-shield-alt"></i></div>
-            <h3>Permissions Required</h3>
-            <p style="font-size: 14px; color: #64748b; margin: 15px 0;">To read incoming messages and process payments, we need SMS and Background Execution permission.</p>
-            <button class="connect-btn" onclick="grantPermissions()">ALLOW PERMISSIONS</button>
+    <!-- Sidebar Settings -->
+    <div id="settingsOverlay">
+        <div class="sidebar-header">
+            <i class="fas fa-arrow-left" style="cursor:pointer" onclick="toggleSettings(false)"></i>
+            <span style="font-weight: 700;">Settings</span>
+            <div class="add-config-btn" onclick="toggleAddForm()"><i class="fas fa-plus"></i></div>
+        </div>
+        <div class="sidebar-content">
+            <div id="addForm" class="add-form-container">
+                <input type="text" id="senderNameInput" class="settings-input" placeholder="Sender Name (e.g. bKash)" style="margin-bottom: 10px;">
+                <input type="number" id="senderPhoneInput" class="settings-input" placeholder="Your Mobile Number" style="margin-bottom: 10px;">
+                <button class="connect-btn" onclick="saveSenderConfig()" style="padding: 12px; font-size: 14px;">SAVE CONFIG</button>
+            </div>
+            <div id="sendersList" style="margin-top: 15px;">
+                <!-- List items here -->
+            </div>
         </div>
     </div>
+
+    <div id="toast">Message here</div>
 
     <script>
         const firebaseConfig = {
@@ -383,30 +461,118 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        let allowedSenders = JSON.parse(localStorage.getItem('allowedSenders') || '[]');
 
-        // ১. অফলাইন সাপোর্ট এনাবল (ইন্টারনেট না থাকলেও ডাটা সেভ হবে)
-        db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-            console.log("Persistence failed", err.code);
-        });
+        const paymentLogos = {
+            'bkash': 'https://i.ibb.co.com/4Zdk93RY/c34b1744cdd3f245d55d444f74c9f9b9.png',
+            'nagad': 'https://i.ibb.co.com/ZQ3Rx9d/3d0f539fb2129a873e763f72850cc387.png',
+            'upay': 'https://i.ibb.co.com/SDgq7VJW/vecteezy-upay-logo-mobile-banking-app-icon-transparent-background-68764291.png',
+            'rocket': 'https://i.ibb.co.com/q3mm8LWb/IMG-20260207-085936.png'
+        };
 
         window.onload = () => {
+            renderSenders();
             setTimeout(() => {
                 document.getElementById('loader').style.opacity = '0';
                 setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
             }, 1500);
         };
 
-        window.onbeforeunload = (e) => {
-            e.preventDefault();
-            return "Do you want to stop the service?";
-        };
-
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg;
             t.classList.add('show');
-            const duration = Math.max(3000, msg.length * 100); 
-            setTimeout(() => { t.classList.remove('show'); }, duration);
+            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        }
+
+        function toggleSettings(show) {
+            const overlay = document.getElementById('settingsOverlay');
+            if(show) overlay.classList.add('open');
+            else {
+                overlay.classList.remove('open');
+                document.getElementById('addForm').classList.remove('active');
+            }
+        }
+
+        function toggleAddForm() {
+            document.getElementById('addForm').classList.toggle('active');
+        }
+
+        function saveSenderConfig() {
+            const name = document.getElementById('senderNameInput').value.trim(); // Case preserved
+            const phone = document.getElementById('senderPhoneInput').value.trim();
+            const tokenVal = document.getElementById('apiInput').value.trim();
+
+            if(!name || !phone) { showToast("Fill all fields!"); return; }
+
+            const newConfig = { name: name, phone: phone };
+            allowedSenders.push(newConfig);
+            localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
+
+            // Save to DB if connected
+            if(tokenVal) {
+                db.collection("collected_data").doc(tokenVal).collection("configs").add(newConfig);
+            }
+
+            renderSenders();
+            toggleAddForm();
+            document.getElementById('senderNameInput').value = '';
+            document.getElementById('senderPhoneInput').value = '';
+            showToast("Added Successfully");
+        }
+
+        function deleteSender(index) {
+            const tokenVal = document.getElementById('apiInput').value.trim();
+            const itemToDelete = allowedSenders[index];
+            
+            allowedSenders.splice(index, 1);
+            localStorage.setItem('allowedSenders', JSON.stringify(allowedSenders));
+
+            // Delete from DB if connected
+            if(tokenVal) {
+                db.collection("collected_data").doc(tokenVal).collection("configs")
+                  .where("name", "==", itemToDelete.name)
+                  .where("phone", "==", itemToDelete.phone)
+                  .get().then(qs => qs.forEach(doc => doc.ref.delete()));
+            }
+
+            renderSenders();
+        }
+
+        function renderSenders() {
+            const list = document.getElementById('sendersList');
+            if(allowedSenders.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center; padding:40px 0;">
+                        <i class="fas fa-folder-open" style="font-size:40px; color:#e2e8f0; margin-bottom:10px;"></i>
+                        <p style="color:#94a3b8; font-size:13px;">List is Empty</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = allowedSenders.map((item, index) => {
+                const lowerName = item.name.toLowerCase();
+                let logoImg = "";
+                for(let key in paymentLogos) {
+                    if(lowerName.includes(key)) {
+                        logoImg = `<img src="${paymentLogos[key]}" class="sender-logo-small">`;
+                        break;
+                    }
+                }
+
+                return `
+                <div class="sender-card">
+                    <div class="sender-info-flex">
+                        ${logoImg}
+                        <div>
+                            <b style="display:block; font-size:14px;">${item.name}</b>
+                            <span style="font-size:12px; color:#64748b;">SIM: ${item.phone}</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-trash" style="color:var(--danger); cursor:pointer" onclick="deleteSender(${index})"></i>
+                </div>
+                `;
+            }).join('');
         }
 
         function toggleClearIcon() {
@@ -419,119 +585,88 @@
             const input = document.getElementById('apiInput');
             input.value = "";
             toggleClearIcon();
-            input.focus();
         }
 
         async function pasteFromClipboard() {
-            try {
-                const text = await navigator.clipboard.readText();
-                document.getElementById('apiInput').value = text;
-                toggleClearIcon();
-                showToast("Token Pasted Successfully");
-            } catch (err) {
-                showToast("Clipboard access denied.");
-            }
+            const text = await navigator.clipboard.readText();
+            document.getElementById('apiInput').value = text;
+            toggleClearIcon();
         }
 
         async function handleConnect() {
-            const apiVal = document.getElementById('apiInput').value.trim();
-            const connectBtn = document.getElementById('connectBtn');
-
-            if (!apiVal) {
-                showToast("Please enter a valid NURAPI token before connecting!");
+            if (allowedSenders.length === 0) {
+                alert("Action Denied! Please add at least one Configuration in Settings before connecting.");
+                toggleSettings(true);
                 return;
             }
 
-            connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
-            connectBtn.disabled = true;
-
+            const apiVal = document.getElementById('apiInput').value.trim();
+            if (!apiVal) { showToast("Enter NURAPI Token!"); return; }
+            
+            const btn = document.getElementById('connectBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
+            
             try {
-                const query = await db.collection("tokens")
-                                    .where("token", "==", apiVal)
-                                    .get();
-
+                const query = await db.collection("tokens").where("token", "==", apiVal).get();
                 if (!query.empty) {
-                    showToast("API Verified! Your service is now authorized to collect and sync data.");
+                    showToast("Verified!");
+                    // Sync local configs to DB on fresh connection
+                    allowedSenders.forEach(config => {
+                        db.collection("collected_data").doc(apiVal).collection("configs").doc(config.name + config.phone).set(config);
+                    });
                     activateService();
                 } else {
-                    showToast("Invalid Token! Key not found in database. Please check and try again.");
-                    connectBtn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE';
-                    connectBtn.disabled = false;
+                    showToast("Invalid Token!");
+                    btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE';
                 }
-            } catch (error) {
-                showToast("Connection Error! Please check your internet connection.");
-                connectBtn.disabled = false;
-            }
+            } catch (e) { showToast("Connection Error!"); btn.innerHTML = '<i class="fas fa-plug"></i> CONNECT SERVICE'; }
         }
 
         function activateService() {
             const wrapper = document.getElementById('statusWrapper');
             const statusText = document.getElementById('statusText');
             const connectBtn = document.getElementById('connectBtn');
-            wrapper.classList.remove('status-inactive');
-            wrapper.classList.add('status-active');
+            wrapper.classList.replace('status-inactive', 'status-active');
             statusText.innerText = "Active";
             connectBtn.style.background = "#64748b";
             connectBtn.innerHTML = '<i class="fas fa-check-circle"></i> SERVICE RUNNING';
-            setTimeout(() => { document.getElementById('permModal').style.display = 'flex'; }, 1000);
-        }
-
-        function grantPermissions() {
-            document.getElementById('permModal').style.display = 'none';
-            showToast("Permissions Granted! The application will now read messages in the background.");
             startDataCollection();
         }
 
-        // ২. নেটিভ ডাটা কালেকশন লজিক (Background & Offline) - UPDATED
+        function addActivityLog(sender, body) {
+            const container = document.getElementById('activityLogs');
+            if(container.querySelector('p')) container.innerHTML = '';
+            
+            const time = new Date().toLocaleTimeString();
+            const log = document.createElement('div');
+            log.className = 'log-item';
+            log.innerHTML = `<b>${sender}</b>: Received & Sent to DB <span>Time: ${time}</span>`;
+            container.prepend(log);
+        }
+
         function startDataCollection() {
             const tokenVal = document.getElementById('apiInput').value.trim();
-            
-            // ফায়ারস্টোরে সার্ভিস স্ট্যাটাস আপডেট
-            db.collection("collected_data").doc(tokenVal).set({
-                last_active: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "running"
-            }, { merge: true });
+            document.getElementById('bgStatusText').innerText = "Running";
+            document.getElementById('bgStatusText').style.color = "var(--primary-color)";
 
-            // নেটিভ ডিভাইস রেডি লজিক
             document.addEventListener('deviceready', function() {
-                
-                // ক. ব্যাকগ্রাউন্ড মোড অ্যাক্টিভেট করা
-                if (window.cordova && cordova.plugins.backgroundMode) {
-                    cordova.plugins.backgroundMode.enable();
-                    cordova.plugins.backgroundMode.overrideBackButton();
-                    cordova.plugins.backgroundMode.excludeFromTaskList();
-                    
-                    // সংশোধিত ব্যাটারি অপ্টিমাইজেশন লজিক
-                    if(device.platform === 'Android' && window.plugins && window.plugins.ignoreBatteryOptimizations) {
-                        window.plugins.ignoreBatteryOptimizations.requestIgnoreBatteryOptimizations(
-                            function() { console.log('Optimizations requested'); },
-                            function(e) { console.log('Error requesting optimizations: ' + e); }
-                        );
-                    }
-                }
-
-                // খ. SMS লিসেনার চালু করা
                 if (window.SMSReceive) {
-                    window.SMSReceive.startWatch(function() {
-                        console.log('SMS Watcher Started');
-                    }, function() {
-                        showToast("Error: Could not start SMS watcher");
-                    });
-
-                    // নতুন SMS আসলে এই ইভেন্ট ফায়ার হবে
+                    window.SMSReceive.startWatch();
                     document.addEventListener('onSMSArrive', function(e) {
                         const sms = e.data;
+                        const sender = sms.address.toLowerCase();
+                        const config = allowedSenders.find(c => sender.includes(c.name.toLowerCase()));
                         
-                        // অফলাইন থাকলেও ডাটা ফায়ারস্টোর কিউতে জমা হবে
-                        db.collection("collected_data").doc(tokenVal).collection("messages").add({
-                            sender: sms.address,
-                            body: sms.body,
-                            date: sms.date || new Date().getTime(),
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            sync_status: "captured"
-                        }).then(() => {
-                            console.log("SMS Stored for sync");
-                        });
+                        if (config) {
+                            db.collection("collected_data").doc(tokenVal).collection("messages").add({
+                                sender: sms.address,
+                                body: sms.body,
+                                receiver_sim: config.phone,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            }).then(() => {
+                                addActivityLog(sms.address, sms.body);
+                            });
+                        }
                     });
                 }
             }, false);
